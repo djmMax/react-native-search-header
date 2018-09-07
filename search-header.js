@@ -42,9 +42,8 @@ import historyIcon from './assets/icons/history-3x.png';
 import recallIcon from './assets/icons/recall-3x.png';
 import searchIcon from './assets/icons/search-3x.png';
 
-const {
-    Component
-} = React;
+const { Component } = React;
+const { AsyncStorage } = ReactNative;
 
 const {
     Text,
@@ -273,6 +272,34 @@ export default class SearchHeader extends Component {
                 autocompletes: []
             }
         };
+    }
+    componentWillMount(){
+        this._retrieveHistories();
+    }
+    _storeHistories = async (histories) => {
+        try {
+            await AsyncStorage.setItem("search_histories", JSON.stringify(histories));
+        } catch (error) {
+            // Error saving data
+        }
+    }
+    _retrieveHistories = async () => {
+        try {
+            const histories = JSON.parse(
+                await AsyncStorage.getItem("search_histories")
+            );
+            if (histories !== null) {
+                console.log(histories);
+                const suggestion = {
+                    ...this.state.suggestion,
+                    historyEntryIndex : histories.length,
+                    histories
+                };
+                this.setState({suggestion});
+            }
+        } catch (error) {
+            // Error retrieving data
+        }
     }
     /**
      * @description - Assign the registered component's reference object.
@@ -540,17 +567,22 @@ export default class SearchHeader extends Component {
         } = component.props;
         const value = event.nativeEvent.text;
 
+        this.setState(prevState => {
+            return {
+              input: {
+                ...prevState.input,
+                value,
+                valueChanged: value !== prevState.input.value,
+                focused: true
+              }
+            };
+          });
+          
         const fetchSearchAutocompletions = async function () {
             const autocompleteTexts = await onGetAutocompletions(value);
             if (Array.isArray(autocompleteTexts) && autocompleteTexts.length) {
                 component.setState((prevState) => {
                     return {
-                        input: {
-                            ...prevState.input,
-                            value,
-                            valueChanged: value !== prevState.input.value,
-                            focused: true
-                        },
                         // suggestion: {
                         //     ...prevState.suggestion,
                         //     visible: true,
@@ -657,6 +689,7 @@ export default class SearchHeader extends Component {
                     }
                     historyEntryIndex++;
                     histories = histories.sort((itemA, itemB) => itemB.timestamp - itemA.timestamp);
+                    this._storeHistories(this.state.suggestion.histories);
 
                     return {
                         suggestion: {
