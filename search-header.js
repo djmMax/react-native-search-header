@@ -903,6 +903,7 @@ export default class SearchHeader extends Component {
                     onBlur = { component.onBlur }
                     onChange = { component.onEditting }
                     onSubmitEditing = { component.onSubmitEditing }
+                    autoCapitalize="none"
                 />
                 {
                     input.value === `` ? <View style = { adjustedStyle.action } /> : <View style = { adjustedStyle.action }>
